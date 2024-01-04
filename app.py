@@ -71,6 +71,3 @@ if st.button("Scrape"):
                 st.error("Failed to scrape the website.")
     else:
         st.error("Invalid URL provided.")
-
-if __name__ == "__main__":
-    st.run()
