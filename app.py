@@ -1,8 +1,9 @@
 import streamlit as st
 import requests
 from bs4 import BeautifulSoup
-import pdfkit
+from fpdf import FPDF
 from urllib.parse import urlparse, urljoin
+import io
 
 def is_valid_url(url):
     try:
@@ -39,14 +40,17 @@ def scrape_website(url, max_depth=3, current_depth=0, visited=None):
 
     return text
 
-def create_pdf(text, filename="scraped_content.pdf"):
-    pdfkit.from_string(text, filename)
-    return filename
+def create_pdf(text):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.multi_cell(0, 10, text)
+    pdf_output = io.BytesIO()
+    pdf.output(pdf_output)
+    return pdf_output.getvalue()
 
 st.title("Website Text Scraper")
 input_url = st.text_input("Enter a Website URL")
-
-# Dropdown for depth control
 depth_options = [1, 2, 3, 4, 5] # Define the depth options
 max_depth = st.selectbox("Select Maximum Depth for Crawling", depth_options)
 
@@ -55,15 +59,14 @@ if st.button("Scrape"):
         with st.spinner('Scraping...'):
             scraped_text = scrape_website(input_url, max_depth=max_depth)
             if scraped_text:
-                pdf_file = create_pdf(scraped_text)
+                pdf_bytes = create_pdf(scraped_text)
                 st.success('Scraping Done! Download the PDF below.')
-                with open(pdf_file, "rb") as file:
-                    st.download_button(
-                        label="Download PDF",
-                        data=file,
-                        file_name=pdf_file,
-                        mime="application/octet-stream"
-                    )
+                st.download_button(
+                    label="Download PDF",
+                    data=pdf_bytes,
+                    file_name="scraped_content.pdf",
+                    mime="application/octet-stream"
+                )
             else:
                 st.error("Failed to scrape the website.")
     else:
